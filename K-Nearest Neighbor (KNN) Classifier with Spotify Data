@@ -1,0 +1,123 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+sns.set()
+from sklearn.cluster import KMeans
+
+link="tracks.csv"
+tracks=pd.read_csv(link,header=0)
+tracks.head()
+
+columns=tracks.columns[np.r_[8:9,9:10,10:11,13:14,14:15,15:16,16:17,17:18,18:19]]
+fit_data=tracks[columns]
+fit_data.head()
+
+from sklearn import preprocessing
+scaler = preprocessing.MinMaxScaler()
+features_normal = scaler.fit_transform(fit_data)
+features_normal = pd.DataFrame(features_normal)
+features_normal.colmuns = fit_data.columns
+features_normal.head()
+
+pd.DataFrame(features_normal).corr()
+
+plt.figure(figsize=(16, 6))
+heatmap = sns.heatmap(features_normal.corr(), vmin=-1, vmax=1, annot=True, cmap='BrBG')
+heatmap.set_title('Correlation Heatmap', fontdict={'fontsize':18},pad=12);
+plt.savefig('heatmap.png', dpi=300, bbox_inches='tight')
+
+WCSS =[]
+for i in range(1,10):
+    kmeans=KMeans(i)
+    kmeans.fit(features_normal)
+    WCSS.append(kmeans.inertia_)
+WCSS    
+
+
+plt.plot(range(1,10),WCSS)
+plt.xlabel('Number of clusters')
+plt.ylabel('WCSS')
+
+
+kmeans_new=KMeans(6)
+kmeans_new.fit(features_normal)
+clusters = tracks.copy()
+features_normal['cluster_pred'] = kmeans_new.fit_predict(features_normal)
+clusters['cluster_pred'] = kmeans_new.fit_predict(features_normal)
+
+features_normal.head()
+
+clusters.head()
+
+sns.set_style("whitegrid")
+sns.set(rc={'figure.figsize':(11.7,8.27)})
+features_normal_new=features_normal.drop('cluster_pred',1)
+sns.boxplot(x='variable', y='value', data=pd.melt(features_normal_new))
+
+x1=clusters[['danceability','energy','loudness','speechiness','acousticness','instrumentalness','liveness','valence','tempo']]
+y1=clusters['cluster_pred']
+x1.head()
+
+from sklearn.neighbors import KNeighborsClassifier
+nearest = KNeighborsClassifier(n_neighbors=6)
+nearest.fit(x1,y1)
+KNeighborsClassifier(algorithm='auto',leaf_size=30,metric="minkowski",metric_params=None,n_jobs=1,n_neighbors=6,p=2,weights='uniform')
+
+predict2=nearest.predict(x1)
+predict2
+
+np.array(y1)
+df=pd.DataFrame(np.array(y1), columns=['y'])
+df['predict y']=predict2
+df['same']=df['y']==df['predict y']
+df
+
+print(df.same.value_counts('%'))
+
+sample_1=np.array([[0.5,0.2,5,0.5,0.5,0.5,0.2,0.5,100]])
+predict=nearest.predict(sample_1)
+predict_proba=nearest.predict_proba(sample_1)
+print('predict:',predict)
+print('predict proba:',predict_proba)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
